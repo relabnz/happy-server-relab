@@ -1,29 +1,33 @@
-import * as Minio from 'minio';
+import { BlobServiceClient } from "@azure/storage-blob";
 
-const s3Host = process.env.S3_HOST!;
-const s3Port = process.env.S3_PORT ? parseInt(process.env.S3_PORT, 10) : undefined;
-const s3UseSSL = process.env.S3_USE_SSL ? process.env.S3_USE_SSL === 'true' : true;
+const azureStorageConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || "";
+const azureStorageContainer = process.env.AZURE_STORAGE_CONTAINER || "";
+const azureStoragePublicUrl = process.env.AZURE_STORAGE_PUBLIC_URL || "";
 
-export const s3client = new Minio.Client({
-    endPoint: s3Host,
-    port: s3Port,
-    useSSL: s3UseSSL,
-    accessKey: process.env.S3_ACCESS_KEY!,
-    secretKey: process.env.S3_SECRET_KEY!,
-});
-
-export const s3bucket = process.env.S3_BUCKET!;
-
-export const s3host = process.env.S3_HOST!
-
-export const s3public = process.env.S3_PUBLIC_URL!;
+export const isFileStorageEnabled = azureStorageConnectionString.length > 0 && azureStorageContainer.length > 0;
+export const azureBlobServiceClient = isFileStorageEnabled
+    ? BlobServiceClient.fromConnectionString(azureStorageConnectionString)
+    : null;
+export const azureContainerClient = isFileStorageEnabled && azureBlobServiceClient
+    ? azureBlobServiceClient.getContainerClient(azureStorageContainer)
+    : null;
 
 export async function loadFiles() {
-    await s3client.bucketExists(s3bucket); // Throws if bucket does not exist or is not accessible
+    if (!isFileStorageEnabled || !azureContainerClient) {
+        return;
+    }
+    const doesContainerExist = await azureContainerClient.exists();
+    if (!doesContainerExist) {
+        throw new Error(`Azure Blob container "${azureStorageContainer}" does not exist or is not accessible`);
+    }
 }
 
 export function getPublicUrl(path: string) {
-    return `${s3public}/${path}`;
+    const normalizedPath = path.replace(/^\/+/, "");
+    if (azureStoragePublicUrl.length > 0) {
+        return `${azureStoragePublicUrl.replace(/\/+$/, "")}/${normalizedPath}`;
+    }
+    return normalizedPath;
 }
 
 export type ImageRef = {

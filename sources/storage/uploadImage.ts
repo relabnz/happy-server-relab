@@ -1,9 +1,9 @@
 import { randomKey } from "@/utils/randomKey";
-import { processImage } from "./processImage";
-import { s3bucket, s3client, s3host } from "./files";
-import { db } from "./db";
+import { processImage } from "@/storage/processImage";
+import { db } from "@/storage/db";
+import { azureContainerClient, getPublicUrl, ImageRef, isFileStorageEnabled } from "@/storage/files";
 
-export async function uploadImage(userId: string, directory: string, prefix: string, url: string, src: Buffer) {
+export async function uploadImage(userId: string, directory: string, prefix: string, url: string, src: Buffer): Promise<ImageRef | null> {
 
     // Check if image already exists
     const existing = await db.uploadedFile.findFirst({
@@ -21,23 +21,33 @@ export async function uploadImage(userId: string, directory: string, prefix: str
         };
     }
 
+    if (!isFileStorageEnabled || !azureContainerClient) {
+        return null;
+    }
+
     // Process image
     const processed = await processImage(src);
     const key = randomKey(prefix);
-    let filename = `${key}.${processed.format === 'png' ? 'png' : 'jpg'}`;
-    await s3client.putObject(s3bucket, 'public/users/' + userId + '/' + directory + '/' + filename, src);
+    const filename = `${key}.${processed.format === "png" ? "png" : "jpg"}`;
+    const path = `public/users/${userId}/${directory}/${filename}`;
+    const blobClient = azureContainerClient.getBlockBlobClient(path);
+    await blobClient.uploadData(src, {
+        blobHTTPHeaders: {
+            blobContentType: processed.format === "png" ? "image/png" : "image/jpeg"
+        }
+    });
     await db.uploadedFile.create({
         data: {
             accountId: userId,
-            path: `public/users/${userId}/${directory}/${filename}`,
-            reuseKey: 'image-url:' + url,
+            path,
+            reuseKey: "image-url:" + url,
             width: processed.width,
             height: processed.height,
             thumbhash: processed.thumbhash
         }
     });
     return {
-        path: `public/users/${userId}/${directory}/${filename}`,
+        path,
         thumbhash: processed.thumbhash,
         width: processed.width,
         height: processed.height
@@ -45,5 +55,5 @@ export async function uploadImage(userId: string, directory: string, prefix: str
 }
 
 export function resolveImageUrl(path: string) {
-    return `https://${s3host}/${s3bucket}/${path}`;
+    return getPublicUrl(path);
 }
