@@ -2,7 +2,7 @@ node_modules
 .env
 dist
 .pgdata
-.azurite
+.minio
 
 .env.local
 .env
@@ -10,3 +10,9 @@ dist
 .logs/
 
 .claude/
+
+# Standalone build artifacts
+data/
+happy-server
+pglite.wasm
+pglite.data

@@ -1,9 +1,9 @@
 import { randomKey } from "@/utils/randomKey";
-import { processImage } from "@/storage/processImage";
-import { db } from "@/storage/db";
-import { azureContainerClient, getPublicUrl, ImageRef, isFileStorageEnabled } from "@/storage/files";
+import { processImage } from "./processImage";
+import { s3bucket, s3client, s3host, isLocalStorage, putLocalFile, getPublicUrl } from "./files";
+import { db } from "./db";
 
-export async function uploadImage(userId: string, directory: string, prefix: string, url: string, src: Buffer): Promise<ImageRef | null> {
+export async function uploadImage(userId: string, directory: string, prefix: string, url: string, src: Buffer) {
 
     // Check if image already exists
     const existing = await db.uploadedFile.findFirst({
@@ -21,33 +21,30 @@ export async function uploadImage(userId: string, directory: string, prefix: str
         };
     }
 
-    if (!isFileStorageEnabled || !azureContainerClient) {
-        return null;
-    }
-
     // Process image
     const processed = await processImage(src);
     const key = randomKey(prefix);
-    const filename = `${key}.${processed.format === "png" ? "png" : "jpg"}`;
-    const path = `public/users/${userId}/${directory}/${filename}`;
-    const blobClient = azureContainerClient.getBlockBlobClient(path);
-    await blobClient.uploadData(src, {
-        blobHTTPHeaders: {
-            blobContentType: processed.format === "png" ? "image/png" : "image/jpeg"
-        }
-    });
+    let filename = `${key}.${processed.format === 'png' ? 'png' : 'jpg'}`;
+    const filePath = `public/users/${userId}/${directory}/${filename}`;
+
+    if (isLocalStorage()) {
+        await putLocalFile(filePath, src);
+    } else {
+        await s3client.putObject(s3bucket, filePath, src);
+    }
+
     await db.uploadedFile.create({
         data: {
             accountId: userId,
-            path,
-            reuseKey: "image-url:" + url,
+            path: filePath,
+            reuseKey: 'image-url:' + url,
             width: processed.width,
             height: processed.height,
             thumbhash: processed.thumbhash
         }
     });
     return {
-        path,
+        path: filePath,
         thumbhash: processed.thumbhash,
         width: processed.width,
         height: processed.height
@@ -55,5 +52,8 @@ export async function uploadImage(userId: string, directory: string, prefix: str
 }
 
 export function resolveImageUrl(path: string) {
-    return getPublicUrl(path);
+    if (isLocalStorage()) {
+        return getPublicUrl(path);
+    }
+    return `https://${s3host}/${s3bucket}/${path}`;
 }

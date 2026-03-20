@@ -15,7 +15,7 @@ import { githubDisconnect } from "./githubDisconnect";
  * Flow:
  * 1. Check if already connected to same account - early exit if yes
  * 2. If GitHub account is connected to another user - disconnect it first
- * 3. Upload avatar to Azure Blob Storage when configured (non-transactional operation)
+ * 3. Upload avatar to S3 (non-transactional operation)
  * 4. In transaction: persist GitHub account and link to user with GitHub username
  * 5. Send socket update after transaction completes
  * 
@@ -52,7 +52,7 @@ export async function githubConnect(
         await githubDisconnect(disconnectCtx);
     }
 
-    // Step 3: Upload avatar to Azure Blob Storage (outside transaction for performance)
+    // Step 3: Upload avatar to S3 (outside transaction for performance)
     const imageResponse = await fetch(githubProfile.avatar_url);
     const imageBuffer = await imageResponse.arrayBuffer();
     const avatar = await uploadImage(userId, 'avatars', 'github', githubProfile.avatar_url, Buffer.from(imageBuffer));
@@ -85,7 +85,7 @@ export async function githubConnect(
                 username: githubProfile.login,
                 firstName: name.firstName,
                 lastName: name.lastName,
-                ...(avatar ? { avatar } : {})
+                avatar: avatar
             }
         });
     });
@@ -97,7 +97,7 @@ export async function githubConnect(
         username: githubProfile.login,
         firstName: name.firstName,
         lastName: name.lastName,
-        ...(avatar ? { avatar } : {})
+        avatar: avatar
     }, updSeq, randomKeyNaked(12));
 
     eventRouter.emitUpdate({
