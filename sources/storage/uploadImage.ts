@@ -30,7 +30,7 @@ export async function uploadImage(userId: string, directory: string, prefix: str
     if (isLocalStorage()) {
         await putLocalFile(filePath, src);
     } else {
-        await s3client.putObject(s3bucket, filePath, src);
+        await s3client!.putObject(s3bucket, filePath, src);
     }
 
     await db.uploadedFile.create({

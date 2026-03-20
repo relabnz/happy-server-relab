@@ -2,31 +2,53 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Client } from 'minio';
 
-const useLocalStorage = !process.env.S3_HOST;
 const dataDir = process.env.DATA_DIR || './data';
 const localFilesDir = path.join(dataDir, 'files');
 
-// S3 config (only used when S3_HOST is set)
-let s3client: any = null;
+interface S3Config {
+    host: string;
+    accessKey: string;
+    secretKey: string;
+    bucket: string;
+    publicUrl: string;
+}
+
+const s3Config: S3Config | null =
+    process.env.S3_HOST &&
+    process.env.S3_ACCESS_KEY &&
+    process.env.S3_SECRET_KEY &&
+    process.env.S3_BUCKET &&
+    process.env.S3_PUBLIC_URL
+        ? {
+            host: process.env.S3_HOST,
+            accessKey: process.env.S3_ACCESS_KEY,
+            secretKey: process.env.S3_SECRET_KEY,
+            bucket: process.env.S3_BUCKET,
+            publicUrl: process.env.S3_PUBLIC_URL,
+        }
+        : null;
+
+let useLocalStorage = !s3Config;
+let s3client: Client | null = null;
 let s3bucket: string = '';
 let s3host: string = '';
 let s3public: string = '';
 
-if (!useLocalStorage) {
+if (s3Config) {
     const s3Port = process.env.S3_PORT ? parseInt(process.env.S3_PORT, 10) : undefined;
     const s3UseSSL = process.env.S3_USE_SSL ? process.env.S3_USE_SSL === 'true' : true;
     const s3Region = process.env.S3_REGION || 'us-east-1';
     s3client = new Client({
-        endPoint: process.env.S3_HOST!,
+        endPoint: s3Config.host,
         port: s3Port,
         useSSL: s3UseSSL,
-        accessKey: process.env.S3_ACCESS_KEY!,
-        secretKey: process.env.S3_SECRET_KEY!,
+        accessKey: s3Config.accessKey,
+        secretKey: s3Config.secretKey,
         region: s3Region,
     });
-    s3bucket = process.env.S3_BUCKET!;
-    s3host = process.env.S3_HOST!;
-    s3public = process.env.S3_PUBLIC_URL!;
+    s3bucket = s3Config.bucket;
+    s3host = s3Config.host;
+    s3public = s3Config.publicUrl;
 }
 
 export { s3client, s3bucket, s3host };
@@ -36,7 +58,13 @@ export async function loadFiles() {
         fs.mkdirSync(localFilesDir, { recursive: true });
         return;
     }
-    await s3client.bucketExists(s3bucket);
+
+    try {
+        await s3client!.bucketExists(s3bucket);
+    } catch {
+        useLocalStorage = true;
+        fs.mkdirSync(localFilesDir, { recursive: true });
+    }
 }
 
 export function getPublicUrl(filePath: string) {
