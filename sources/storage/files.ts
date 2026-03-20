@@ -83,10 +83,10 @@ export function getLocalFilesDir() {
     return localFilesDir;
 }
 
-export async function putLocalFile(filePath: string, data: Buffer) {
+export async function putLocalFile(filePath: string, data: Uint8Array<ArrayBufferLike>) {
     const fullPath = path.join(localFilesDir, filePath);
     fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-    fs.writeFileSync(fullPath, data);
+    fs.writeFileSync(fullPath, new Uint8Array(data));
 }
 
 export type ImageRef = {

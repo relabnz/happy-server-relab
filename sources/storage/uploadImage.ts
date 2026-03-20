@@ -28,7 +28,7 @@ export async function uploadImage(userId: string, directory: string, prefix: str
     const filePath = `public/users/${userId}/${directory}/${filename}`;
 
     if (isLocalStorage()) {
-        await putLocalFile(filePath, src);
+        await putLocalFile(filePath, new Uint8Array(src));
     } else {
         await s3client!.putObject(s3bucket, filePath, src);
     }

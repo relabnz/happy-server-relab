@@ -5,7 +5,7 @@ import { z } from "zod";
 import { randomKeyNaked } from "@/utils/randomKeyNaked";
 import { allocateUserSeq } from "@/storage/seq";
 import { log } from "@/utils/log";
-import * as privacyKit from "privacy-kit";
+import { decodeBase64, encodeBase64 } from "@/modules/encrypt";
 
 export function artifactsRoutes(app: Fastify) {
     // GET /v1/artifacts - List all artifacts for the account
@@ -47,9 +47,9 @@ export function artifactsRoutes(app: Fastify) {
 
             return reply.send(artifacts.map(a => ({
                 id: a.id,
-                header: privacyKit.encodeBase64(a.header),
+                header: encodeBase64(a.header),
                 headerVersion: a.headerVersion,
-                dataEncryptionKey: privacyKit.encodeBase64(a.dataEncryptionKey),
+                dataEncryptionKey: encodeBase64(a.dataEncryptionKey),
                 seq: a.seq,
                 createdAt: a.createdAt.getTime(),
                 updatedAt: a.updatedAt.getTime()
@@ -105,11 +105,11 @@ export function artifactsRoutes(app: Fastify) {
 
             return reply.send({
                 id: artifact.id,
-                header: privacyKit.encodeBase64(artifact.header),
+                header: encodeBase64(artifact.header),
                 headerVersion: artifact.headerVersion,
-                body: privacyKit.encodeBase64(artifact.body),
+                body: encodeBase64(artifact.body),
                 bodyVersion: artifact.bodyVersion,
-                dataEncryptionKey: privacyKit.encodeBase64(artifact.dataEncryptionKey),
+                dataEncryptionKey: encodeBase64(artifact.dataEncryptionKey),
                 seq: artifact.seq,
                 createdAt: artifact.createdAt.getTime(),
                 updatedAt: artifact.updatedAt.getTime()
@@ -172,11 +172,11 @@ export function artifactsRoutes(app: Fastify) {
                 log({ module: 'api', artifactId: id, userId }, 'Found existing artifact');
                 return reply.send({
                     id: existingArtifact.id,
-                    header: privacyKit.encodeBase64(existingArtifact.header),
+                    header: encodeBase64(existingArtifact.header),
                     headerVersion: existingArtifact.headerVersion,
-                    body: privacyKit.encodeBase64(existingArtifact.body),
+                    body: encodeBase64(existingArtifact.body),
                     bodyVersion: existingArtifact.bodyVersion,
-                    dataEncryptionKey: privacyKit.encodeBase64(existingArtifact.dataEncryptionKey),
+                    dataEncryptionKey: encodeBase64(existingArtifact.dataEncryptionKey),
                     seq: existingArtifact.seq,
                     createdAt: existingArtifact.createdAt.getTime(),
                     updatedAt: existingArtifact.updatedAt.getTime()
@@ -189,11 +189,11 @@ export function artifactsRoutes(app: Fastify) {
                 data: {
                     id,
                     accountId: userId,
-                    header: privacyKit.decodeBase64(header),
+                    header: decodeBase64(header),
                     headerVersion: 1,
-                    body: privacyKit.decodeBase64(body),
+                    body: decodeBase64(body),
                     bodyVersion: 1,
-                    dataEncryptionKey: privacyKit.decodeBase64(dataEncryptionKey),
+                    dataEncryptionKey: decodeBase64(dataEncryptionKey),
                     seq: 0
                 }
             });
@@ -209,11 +209,11 @@ export function artifactsRoutes(app: Fastify) {
 
             return reply.send({
                 id: artifact.id,
-                header: privacyKit.encodeBase64(artifact.header),
+                header: encodeBase64(artifact.header),
                 headerVersion: artifact.headerVersion,
-                body: privacyKit.encodeBase64(artifact.body),
+                body: encodeBase64(artifact.body),
                 bodyVersion: artifact.bodyVersion,
-                dataEncryptionKey: privacyKit.encodeBase64(artifact.dataEncryptionKey),
+                dataEncryptionKey: encodeBase64(artifact.dataEncryptionKey),
                 seq: artifact.seq,
                 createdAt: artifact.createdAt.getTime(),
                 updatedAt: artifact.updatedAt.getTime()
@@ -291,11 +291,11 @@ export function artifactsRoutes(app: Fastify) {
                     error: 'version-mismatch',
                     ...(headerMismatch && {
                         currentHeaderVersion: currentArtifact.headerVersion,
-                        currentHeader: privacyKit.encodeBase64(currentArtifact.header)
+                        currentHeader: encodeBase64(currentArtifact.header)
                     }),
                     ...(bodyMismatch && {
                         currentBodyVersion: currentArtifact.bodyVersion,
-                        currentBody: privacyKit.encodeBase64(currentArtifact.body)
+                        currentBody: encodeBase64(currentArtifact.body)
                     })
                 });
             }
@@ -309,7 +309,7 @@ export function artifactsRoutes(app: Fastify) {
             let bodyUpdate: { value: string; version: number } | undefined;
 
             if (header !== undefined && expectedHeaderVersion !== undefined) {
-                updateData.header = privacyKit.decodeBase64(header);
+                updateData.header = decodeBase64(header);
                 updateData.headerVersion = expectedHeaderVersion + 1;
                 headerUpdate = {
                     value: header,
@@ -318,7 +318,7 @@ export function artifactsRoutes(app: Fastify) {
             }
 
             if (body !== undefined && expectedBodyVersion !== undefined) {
-                updateData.body = privacyKit.decodeBase64(body);
+                updateData.body = decodeBase64(body);
                 updateData.bodyVersion = expectedBodyVersion + 1;
                 bodyUpdate = {
                     value: body,

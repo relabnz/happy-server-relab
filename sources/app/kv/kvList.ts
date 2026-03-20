@@ -1,5 +1,5 @@
 import { db } from "@/storage/db";
-import * as privacyKit from "privacy-kit";
+import { encodeBase64 } from "@/modules/encrypt";
 
 export interface KVListOptions {
     prefix?: string;
@@ -49,7 +49,7 @@ export async function kvList(
             .filter(r => r.value !== null)  // Extra safety check
             .map(r => ({
                 key: r.key,
-                value: privacyKit.encodeBase64(r.value!),
+                value: encodeBase64(r.value!),
                 version: r.version
             }))
     };

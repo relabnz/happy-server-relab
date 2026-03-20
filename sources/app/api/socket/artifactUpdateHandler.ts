@@ -5,7 +5,7 @@ import { allocateUserSeq } from "@/storage/seq";
 import { log } from "@/utils/log";
 import { randomKeyNaked } from "@/utils/randomKeyNaked";
 import { Socket } from "socket.io";
-import * as privacyKit from "privacy-kit";
+import { decodeBase64, encodeBase64 } from "@/modules/encrypt";
 
 export function artifactUpdateHandler(userId: string, socket: Socket) {
     // Read artifact with full body
@@ -45,9 +45,9 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 result: 'success',
                 artifact: {
                     id: artifact.id,
-                    header: privacyKit.encodeBase64(artifact.header),
+                    header: encodeBase64(artifact.header),
                     headerVersion: artifact.headerVersion,
-                    body: privacyKit.encodeBase64(artifact.body),
+                    body: encodeBase64(artifact.body),
                     bodyVersion: artifact.bodyVersion,
                     seq: artifact.seq,
                     createdAt: artifact.createdAt.getTime(),
@@ -136,14 +136,14 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 if (headerMismatch) {
                     response.header = {
                         currentVersion: currentArtifact.headerVersion,
-                        currentData: privacyKit.encodeBase64(currentArtifact.header)
+                        currentData: encodeBase64(currentArtifact.header)
                     };
                 }
                 
                 if (bodyMismatch) {
                     response.body = {
                         currentVersion: currentArtifact.bodyVersion,
-                        currentData: privacyKit.encodeBase64(currentArtifact.body)
+                        currentData: encodeBase64(currentArtifact.body)
                     };
                 }
                 
@@ -161,7 +161,7 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
             let bodyUpdate: { value: string; version: number } | undefined;
 
             if (header) {
-                updateData.header = privacyKit.decodeBase64(header.data);
+                updateData.header = decodeBase64(header.data);
                 updateData.headerVersion = header.expectedVersion + 1;
                 headerUpdate = {
                     value: header.data,
@@ -170,7 +170,7 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
             }
 
             if (body) {
-                updateData.body = privacyKit.decodeBase64(body.data);
+                updateData.body = decodeBase64(body.data);
                 updateData.bodyVersion = body.expectedVersion + 1;
                 bodyUpdate = {
                     value: body.data,
@@ -203,14 +203,14 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 if (header && current) {
                     response.header = {
                         currentVersion: current.headerVersion,
-                        currentData: privacyKit.encodeBase64(current.header)
+                        currentData: encodeBase64(current.header)
                     };
                 }
                 
                 if (body && current) {
                     response.body = {
                         currentVersion: current.bodyVersion,
-                        currentData: privacyKit.encodeBase64(current.body)
+                        currentData: encodeBase64(current.body)
                     };
                 }
                 
@@ -292,9 +292,9 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                     result: 'success',
                     artifact: {
                         id: existingArtifact.id,
-                        header: privacyKit.encodeBase64(existingArtifact.header),
+                        header: encodeBase64(existingArtifact.header),
                         headerVersion: existingArtifact.headerVersion,
-                        body: privacyKit.encodeBase64(existingArtifact.body),
+                        body: encodeBase64(existingArtifact.body),
                         bodyVersion: existingArtifact.bodyVersion,
                         seq: existingArtifact.seq,
                         createdAt: existingArtifact.createdAt.getTime(),
@@ -309,11 +309,11 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 data: {
                     id,
                     accountId: userId,
-                    header: privacyKit.decodeBase64(header),
+                    header: decodeBase64(header),
                     headerVersion: 1,
-                    body: privacyKit.decodeBase64(body),
+                    body: decodeBase64(body),
                     bodyVersion: 1,
-                    dataEncryptionKey: privacyKit.decodeBase64(dataEncryptionKey),
+                    dataEncryptionKey: decodeBase64(dataEncryptionKey),
                     seq: 0
                 }
             });
@@ -332,9 +332,9 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 result: 'success',
                 artifact: {
                     id: artifact.id,
-                    header: privacyKit.encodeBase64(artifact.header),
+                    header: encodeBase64(artifact.header),
                     headerVersion: artifact.headerVersion,
-                    body: privacyKit.encodeBase64(artifact.body),
+                    body: encodeBase64(artifact.body),
                     bodyVersion: artifact.bodyVersion,
                     seq: artifact.seq,
                     createdAt: artifact.createdAt.getTime(),
