@@ -5,6 +5,10 @@ import { randomKeyNaked } from "@/utils/randomKeyNaked";
 import { eventRouter, buildKVBatchUpdateUpdate } from "@/app/events/eventRouter";
 import * as privacyKit from "privacy-kit";
 
+function encodeBytes(value: Uint8Array<ArrayBufferLike>): string {
+    return privacyKit.encodeBase64(new Uint8Array(value));
+}
+
 export interface KVMutation {
     key: string;
     value: string | null; // null = delete (sets value to null but keeps record)
@@ -58,7 +62,7 @@ export async function kvMutate(
                     key: mutation.key,
                     error: 'version-mismatch',
                     version: currentVersion,
-                    value: existing?.value ? privacyKit.encodeBase64(existing.value) : null
+                    value: existing?.value ? encodeBytes(existing.value) : null
                 });
             }
         }
@@ -79,7 +83,7 @@ export async function kvMutate(
                     data: {
                         accountId: ctx.uid,
                         key: mutation.key,
-                        value: mutation.value ? new Uint8Array(Buffer.from(mutation.value, 'base64')) : null,
+                        value: mutation.value ? privacyKit.decodeBase64(mutation.value) : null,
                         version: 0
                     }
                 });

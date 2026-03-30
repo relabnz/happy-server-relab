@@ -6,13 +6,17 @@ import * as path from "path";
 
 let pgliteInstance: PGlite | null = null;
 
-type WebAssemblyModuleCtor = new (bytes: Buffer) => WebAssembly.Module;
+type WebAssemblyModuleCtor = new (bytes: Uint8Array<ArrayBuffer>) => WebAssembly.Module;
 
 function getWebAssemblyModuleCtor(): WebAssemblyModuleCtor | null {
     const moduleCtor = (globalThis as { WebAssembly?: { Module?: unknown } }).WebAssembly?.Module;
     return typeof moduleCtor === "function"
         ? (moduleCtor as WebAssemblyModuleCtor)
         : null;
+}
+
+function readBinaryFile(filePath: string): Uint8Array<ArrayBuffer> {
+    return new Uint8Array(fs.readFileSync(filePath));
 }
 
 function findPGliteWasm(): { wasmModule: WebAssembly.Module; fsBundle: Blob } | null {
@@ -28,8 +32,8 @@ function findPGliteWasm(): { wasmModule: WebAssembly.Module; fsBundle: Blob } | 
         const wasmPath = path.join(dir, "pglite.wasm");
         const dataPath = path.join(dir, "pglite.data");
         if (fs.existsSync(wasmPath) && fs.existsSync(dataPath)) {
-            const wasmModule = new wasmModuleCtor(fs.readFileSync(wasmPath));
-            const fsBundle = new Blob([fs.readFileSync(dataPath)]);
+            const wasmModule = new wasmModuleCtor(readBinaryFile(wasmPath));
+            const fsBundle = new Blob([readBinaryFile(dataPath)]);
             return { wasmModule, fsBundle };
         }
     }

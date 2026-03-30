@@ -7,6 +7,10 @@ import { allocateUserSeq } from "@/storage/seq";
 import { log } from "@/utils/log";
 import * as privacyKit from "privacy-kit";
 
+function encodeBytes(value: Uint8Array<ArrayBufferLike>): string {
+    return privacyKit.encodeBase64(new Uint8Array(value));
+}
+
 export function artifactsRoutes(app: Fastify) {
     // GET /v1/artifacts - List all artifacts for the account
     app.get('/v1/artifacts', {
@@ -47,9 +51,9 @@ export function artifactsRoutes(app: Fastify) {
 
             return reply.send(artifacts.map(a => ({
                 id: a.id,
-                header: privacyKit.encodeBase64(a.header),
+                header: encodeBytes(a.header),
                 headerVersion: a.headerVersion,
-                dataEncryptionKey: privacyKit.encodeBase64(a.dataEncryptionKey),
+                dataEncryptionKey: encodeBytes(a.dataEncryptionKey),
                 seq: a.seq,
                 createdAt: a.createdAt.getTime(),
                 updatedAt: a.updatedAt.getTime()
@@ -105,11 +109,11 @@ export function artifactsRoutes(app: Fastify) {
 
             return reply.send({
                 id: artifact.id,
-                header: privacyKit.encodeBase64(artifact.header),
+                header: encodeBytes(artifact.header),
                 headerVersion: artifact.headerVersion,
-                body: privacyKit.encodeBase64(artifact.body),
+                body: encodeBytes(artifact.body),
                 bodyVersion: artifact.bodyVersion,
-                dataEncryptionKey: privacyKit.encodeBase64(artifact.dataEncryptionKey),
+                dataEncryptionKey: encodeBytes(artifact.dataEncryptionKey),
                 seq: artifact.seq,
                 createdAt: artifact.createdAt.getTime(),
                 updatedAt: artifact.updatedAt.getTime()
@@ -172,11 +176,11 @@ export function artifactsRoutes(app: Fastify) {
                 log({ module: 'api', artifactId: id, userId }, 'Found existing artifact');
                 return reply.send({
                     id: existingArtifact.id,
-                    header: privacyKit.encodeBase64(existingArtifact.header),
+                    header: encodeBytes(existingArtifact.header),
                     headerVersion: existingArtifact.headerVersion,
-                    body: privacyKit.encodeBase64(existingArtifact.body),
+                    body: encodeBytes(existingArtifact.body),
                     bodyVersion: existingArtifact.bodyVersion,
-                    dataEncryptionKey: privacyKit.encodeBase64(existingArtifact.dataEncryptionKey),
+                    dataEncryptionKey: encodeBytes(existingArtifact.dataEncryptionKey),
                     seq: existingArtifact.seq,
                     createdAt: existingArtifact.createdAt.getTime(),
                     updatedAt: existingArtifact.updatedAt.getTime()
@@ -209,11 +213,11 @@ export function artifactsRoutes(app: Fastify) {
 
             return reply.send({
                 id: artifact.id,
-                header: privacyKit.encodeBase64(artifact.header),
+                header: encodeBytes(artifact.header),
                 headerVersion: artifact.headerVersion,
-                body: privacyKit.encodeBase64(artifact.body),
+                body: encodeBytes(artifact.body),
                 bodyVersion: artifact.bodyVersion,
-                dataEncryptionKey: privacyKit.encodeBase64(artifact.dataEncryptionKey),
+                dataEncryptionKey: encodeBytes(artifact.dataEncryptionKey),
                 seq: artifact.seq,
                 createdAt: artifact.createdAt.getTime(),
                 updatedAt: artifact.updatedAt.getTime()
@@ -291,11 +295,11 @@ export function artifactsRoutes(app: Fastify) {
                     error: 'version-mismatch',
                     ...(headerMismatch && {
                         currentHeaderVersion: currentArtifact.headerVersion,
-                        currentHeader: privacyKit.encodeBase64(currentArtifact.header)
+                        currentHeader: encodeBytes(currentArtifact.header)
                     }),
                     ...(bodyMismatch && {
                         currentBodyVersion: currentArtifact.bodyVersion,
-                        currentBody: privacyKit.encodeBase64(currentArtifact.body)
+                        currentBody: encodeBytes(currentArtifact.body)
                     })
                 });
             }

@@ -7,6 +7,10 @@ import { randomKeyNaked } from "@/utils/randomKeyNaked";
 import { Socket } from "socket.io";
 import * as privacyKit from "privacy-kit";
 
+function encodeBytes(value: Uint8Array<ArrayBufferLike>): string {
+    return privacyKit.encodeBase64(new Uint8Array(value));
+}
+
 export function artifactUpdateHandler(userId: string, socket: Socket) {
     // Read artifact with full body
     socket.on('artifact-read', async (data: {
@@ -45,9 +49,9 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 result: 'success',
                 artifact: {
                     id: artifact.id,
-                    header: privacyKit.encodeBase64(artifact.header),
+                    header: encodeBytes(artifact.header),
                     headerVersion: artifact.headerVersion,
-                    body: privacyKit.encodeBase64(artifact.body),
+                    body: encodeBytes(artifact.body),
                     bodyVersion: artifact.bodyVersion,
                     seq: artifact.seq,
                     createdAt: artifact.createdAt.getTime(),
@@ -136,14 +140,14 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 if (headerMismatch) {
                     response.header = {
                         currentVersion: currentArtifact.headerVersion,
-                        currentData: privacyKit.encodeBase64(currentArtifact.header)
+                        currentData: encodeBytes(currentArtifact.header)
                     };
                 }
                 
                 if (bodyMismatch) {
                     response.body = {
                         currentVersion: currentArtifact.bodyVersion,
-                        currentData: privacyKit.encodeBase64(currentArtifact.body)
+                        currentData: encodeBytes(currentArtifact.body)
                     };
                 }
                 
@@ -203,14 +207,14 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 if (header && current) {
                     response.header = {
                         currentVersion: current.headerVersion,
-                        currentData: privacyKit.encodeBase64(current.header)
+                        currentData: encodeBytes(current.header)
                     };
                 }
                 
                 if (body && current) {
                     response.body = {
                         currentVersion: current.bodyVersion,
-                        currentData: privacyKit.encodeBase64(current.body)
+                        currentData: encodeBytes(current.body)
                     };
                 }
                 
@@ -292,9 +296,9 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                     result: 'success',
                     artifact: {
                         id: existingArtifact.id,
-                        header: privacyKit.encodeBase64(existingArtifact.header),
+                        header: encodeBytes(existingArtifact.header),
                         headerVersion: existingArtifact.headerVersion,
-                        body: privacyKit.encodeBase64(existingArtifact.body),
+                        body: encodeBytes(existingArtifact.body),
                         bodyVersion: existingArtifact.bodyVersion,
                         seq: existingArtifact.seq,
                         createdAt: existingArtifact.createdAt.getTime(),
@@ -332,9 +336,9 @@ export function artifactUpdateHandler(userId: string, socket: Socket) {
                 result: 'success',
                 artifact: {
                     id: artifact.id,
-                    header: privacyKit.encodeBase64(artifact.header),
+                    header: encodeBytes(artifact.header),
                     headerVersion: artifact.headerVersion,
-                    body: privacyKit.encodeBase64(artifact.body),
+                    body: encodeBytes(artifact.body),
                     bodyVersion: artifact.bodyVersion,
                     seq: artifact.seq,
                     createdAt: artifact.createdAt.getTime(),

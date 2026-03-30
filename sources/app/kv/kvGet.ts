@@ -1,6 +1,10 @@
 import { db } from "@/storage/db";
 import * as privacyKit from "privacy-kit";
 
+function encodeBytes(value: Uint8Array<ArrayBufferLike>): string {
+    return privacyKit.encodeBase64(new Uint8Array(value));
+}
+
 export type KVGetResult = {
     key: string;
     value: string;
@@ -31,7 +35,7 @@ export async function kvGet(
 
     return {
         key: result.key,
-        value: privacyKit.encodeBase64(result.value),
+        value: encodeBytes(result.value),
         version: result.version
     };
 }

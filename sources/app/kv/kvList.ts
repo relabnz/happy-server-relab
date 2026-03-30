@@ -1,6 +1,10 @@
 import { db } from "@/storage/db";
 import * as privacyKit from "privacy-kit";
 
+function encodeBytes(value: Uint8Array<ArrayBufferLike>): string {
+    return privacyKit.encodeBase64(new Uint8Array(value));
+}
+
 export interface KVListOptions {
     prefix?: string;
     limit?: number;
@@ -49,7 +53,7 @@ export async function kvList(
             .filter(r => r.value !== null)  // Extra safety check
             .map(r => ({
                 key: r.key,
-                value: privacyKit.encodeBase64(r.value!),
+                value: encodeBytes(r.value!),
                 version: r.version
             }))
     };
