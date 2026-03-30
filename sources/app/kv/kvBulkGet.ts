@@ -1,5 +1,5 @@
 import { db } from "@/storage/db";
-import { encodeBase64 } from "@/modules/encrypt";
+import * as privacyKit from "privacy-kit";
 
 export interface KVBulkGetResult {
     values: Array<{
@@ -34,7 +34,7 @@ export async function kvBulkGet(
             .filter(r => r.value !== null)  // Extra safety check
             .map(r => ({
                 key: r.key,
-                value: encodeBase64(r.value!),
+                value: privacyKit.encodeBase64(r.value!),
                 version: r.version
             }))
     };

@@ -3,7 +3,7 @@ import { inTx, afterTx } from "@/storage/inTx";
 import { allocateUserSeq } from "@/storage/seq";
 import { randomKeyNaked } from "@/utils/randomKeyNaked";
 import { eventRouter, buildKVBatchUpdateUpdate } from "@/app/events/eventRouter";
-import { decodeBase64, encodeBase64 } from "@/modules/encrypt";
+import * as privacyKit from "privacy-kit";
 
 export interface KVMutation {
     key: string;
@@ -58,7 +58,7 @@ export async function kvMutate(
                     key: mutation.key,
                     error: 'version-mismatch',
                     version: currentVersion,
-                    value: existing?.value ? encodeBase64(existing.value) : null
+                    value: existing?.value ? privacyKit.encodeBase64(existing.value) : null
                 });
             }
         }
@@ -79,7 +79,7 @@ export async function kvMutate(
                     data: {
                         accountId: ctx.uid,
                         key: mutation.key,
-                        value: mutation.value ? decodeBase64(mutation.value) : null,
+                        value: mutation.value ? new Uint8Array(Buffer.from(mutation.value, 'base64')) : null,
                         version: 0
                     }
                 });
@@ -106,7 +106,7 @@ export async function kvMutate(
                         }
                     },
                     data: {
-                        value: mutation.value ? decodeBase64(mutation.value) : null,
+                        value: mutation.value ? privacyKit.decodeBase64(mutation.value) : null,
                         version: newVersion
                     }
                 });

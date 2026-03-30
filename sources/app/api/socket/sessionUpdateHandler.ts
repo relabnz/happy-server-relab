@@ -21,21 +21,11 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
                 return;
             }
 
-            if (connection.connectionType === 'session-scoped' && connection.sessionId !== sid) {
-                callback({ result: 'error', message: 'session-mismatch' });
-                return;
-            }
-
             // Resolve session
-            const session = await db.session.findFirst({
-                where: { id: sid, accountId: userId },
-                select: {
-                    metadata: true,
-                    metadataVersion: true,
-                }
+            const session = await db.session.findUnique({
+                where: { id: sid, accountId: userId }
             });
             if (!session) {
-                callback({ result: 'error', message: 'session-not-found' });
                 return;
             }
 
@@ -47,26 +37,15 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
 
             // Update metadata
             const { count } = await db.session.updateMany({
-                where: { id: sid, accountId: userId, metadataVersion: expectedVersion },
+                where: { id: sid, metadataVersion: expectedVersion },
                 data: {
                     metadata: metadata,
                     metadataVersion: expectedVersion + 1
                 }
             });
             if (count === 0) {
-                const currentSession = await db.session.findFirst({
-                    where: { id: sid, accountId: userId },
-                    select: {
-                        metadata: true,
-                        metadataVersion: true,
-                    }
-                });
-                if (!currentSession) {
-                    callback({ result: 'error', message: 'session-not-found' });
-                    return;
-                }
-                callback({ result: 'version-mismatch', version: currentSession.metadataVersion, metadata: currentSession.metadata });
-                return;
+                callback({ result: 'version-mismatch', version: session.metadataVersion, metadata: session.metadata });
+                return null;
             }
 
             // Generate session metadata update
@@ -104,52 +83,35 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
                 return;
             }
 
-            if (connection.connectionType === 'session-scoped' && connection.sessionId !== sid) {
-                callback({ result: 'error', message: 'session-mismatch' });
-                return;
-            }
-
             // Resolve session
-            const session = await db.session.findFirst({
-                where: { id: sid, accountId: userId },
-                select: {
-                    agentState: true,
-                    agentStateVersion: true,
+            const session = await db.session.findUnique({
+                where: {
+                    id: sid,
+                    accountId: userId
                 }
             });
             if (!session) {
-                callback({ result: 'error', message: 'session-not-found' });
-                return;
+                callback({ result: 'error' });
+                return null;
             }
 
             // Check version
             if (session.agentStateVersion !== expectedVersion) {
                 callback({ result: 'version-mismatch', version: session.agentStateVersion, agentState: session.agentState });
-                return;
+                return null;
             }
 
             // Update agent state
             const { count } = await db.session.updateMany({
-                where: { id: sid, accountId: userId, agentStateVersion: expectedVersion },
+                where: { id: sid, agentStateVersion: expectedVersion },
                 data: {
                     agentState: agentState,
                     agentStateVersion: expectedVersion + 1
                 }
             });
             if (count === 0) {
-                const currentSession = await db.session.findFirst({
-                    where: { id: sid, accountId: userId },
-                    select: {
-                        agentState: true,
-                        agentStateVersion: true,
-                    }
-                });
-                if (!currentSession) {
-                    callback({ result: 'error', message: 'session-not-found' });
-                    return;
-                }
-                callback({ result: 'version-mismatch', version: currentSession.agentStateVersion, agentState: currentSession.agentState });
-                return;
+                callback({ result: 'version-mismatch', version: session.agentStateVersion, agentState: session.agentState });
+                return null;
             }
 
             // Generate session agent state update

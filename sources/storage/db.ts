@@ -6,11 +6,7 @@ import * as path from "path";
 
 let pgliteInstance: PGlite | null = null;
 
-type WebAssemblyModuleCtor = new (bytes: Uint8Array<ArrayBuffer>) => WebAssembly.Module;
-
-function readBinaryFile(filePath: string): Uint8Array<ArrayBuffer> {
-    return new Uint8Array(fs.readFileSync(filePath));
-}
+type WebAssemblyModuleCtor = new (bytes: Buffer) => WebAssembly.Module;
 
 function getWebAssemblyModuleCtor(): WebAssemblyModuleCtor | null {
     const moduleCtor = (globalThis as { WebAssembly?: { Module?: unknown } }).WebAssembly?.Module;
@@ -32,8 +28,8 @@ function findPGliteWasm(): { wasmModule: WebAssembly.Module; fsBundle: Blob } | 
         const wasmPath = path.join(dir, "pglite.wasm");
         const dataPath = path.join(dir, "pglite.data");
         if (fs.existsSync(wasmPath) && fs.existsSync(dataPath)) {
-            const wasmModule = new wasmModuleCtor(readBinaryFile(wasmPath));
-            const fsBundle = new Blob([readBinaryFile(dataPath)]);
+            const wasmModule = new wasmModuleCtor(fs.readFileSync(wasmPath));
+            const fsBundle = new Blob([fs.readFileSync(dataPath)]);
             return { wasmModule, fsBundle };
         }
     }
@@ -41,8 +37,10 @@ function findPGliteWasm(): { wasmModule: WebAssembly.Module; fsBundle: Blob } | 
 }
 
 function createClient(): PrismaClient {
-    const pgliteDir = process.env.PGLITE_DIR;
-    if (pgliteDir) {
+    const provider = process.env.DB_PROVIDER || "postgres";
+
+    if (provider === "pglite") {
+        const pgliteDir = process.env.PGLITE_DIR || "./data/pglite";
         const wasmOpts = findPGliteWasm();
         if (wasmOpts) {
             pgliteInstance = new PGlite({ dataDir: pgliteDir, ...wasmOpts });
@@ -52,6 +50,7 @@ function createClient(): PrismaClient {
         const adapter = new PrismaPGlite(pgliteInstance);
         return new PrismaClient({ adapter } as any);
     }
+
     return new PrismaClient();
 }
 
